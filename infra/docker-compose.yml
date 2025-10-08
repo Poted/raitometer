@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    container_name: raitometer_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: raitometer_user
+      POSTGRES_PASSWORD: raitometer_password
+      POSTGRES_DB: raitometer_db
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raitometer_user -d raitometer_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    container_name: raitometer_ai
+    build:
+      context: ../backend/ai-service
+    ports:
+      - "8001:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+
+volumes:
+  postgres_data:
