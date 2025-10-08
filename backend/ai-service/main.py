@@ -1,6 +1,8 @@
 import os
+import json
 import google.generativeai as genai
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 from PIL import Image
 from dotenv import load_dotenv
 
@@ -10,8 +12,12 @@ API_KEY = os.getenv('GOOGLE_API_KEY')
 if not API_KEY:
     raise ValueError("GOOGLE_API_KEY environment variable not set")
 
+MODEL_NAME = os.getenv('MODEL_NAME')
+if not MODEL_NAME:
+    raise ValueError("MODEL_NAME environment variable not set")
+
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel(MODEL_NAME)
 
 app = FastAPI(title="raitometer AI Service")
 
@@ -52,8 +58,14 @@ async def analyze_image(file: UploadFile = File(...)):
 
     try:
         response = model.generate_content(prompt)
-        # We assume the model returns a clean JSON string.
-        # In a production app, we would add more robust parsing and error handling here.
-        return response.text
+        
+        clean_text = response.text.strip().replace("```json", "").replace("```", "").strip()
+        
+        try:
+            json_data = json.loads(clean_text)
+            return JSONResponse(content=json_data)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=500, detail="AI returned invalid JSON format.")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during AI analysis: {str(e)}")

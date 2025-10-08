@@ -64,6 +64,8 @@ func (s *Server) projectRoutes(h *handlers.Handlers) http.Handler {
 
 	r.Post("/{projectID}/calculator", h.CreateCalculatorHandler)
 
+	r.Post("/{projectID}/analyze-image", h.AnalyzeProjectImageHandler)
+
 	return r
 }
 
