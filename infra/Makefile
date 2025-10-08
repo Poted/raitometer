@@ -1,3 +1,4 @@
+DOCKER_COMPOSE_FILE := docker-compose.yml
 API_DIR := ../backend/core-api
 
 DB_CONTAINER := raitometer_db
@@ -6,22 +7,24 @@ DB_NAME := raitometer_db
 DB_URL := "postgres://${DB_USER}:raitometer_password@localhost:5432/${DB_NAME}?sslmode=disable"
 MIGRATIONS_PATH := $(API_DIR)/internal/migrations
 
-DOCKER_COMPOSE_FILE := docker-compose.yml
 
 .PHONY: \
 help \
+run \
 run/api \
+infra/up \
+infra/down \
 db/open \
-db/reset \
 migrate/up \
 migrate/down \
 migrate/create \
 migrate/force \
+logs/ai \
+logs/db \
 
 
 help:
 	@echo "Available commands:"
-	@echo "  make run/api  --- Run the Go API server"
 	@echo "  make infra/up  --- Run the containers"
 	@echo "  make infra/down  --- Stop the containers"
 	@echo "  make db/open  --- Open the DB container"
@@ -31,14 +34,11 @@ help:
 	@echo "  make migrate/force v=<version>  --- Force migration to a specific version"
 
 
-run/api:
-	@cd $(API_DIR) && go run ./cmd/api
+infra/up:
+	@docker compose -f $(DOCKER_COMPOSE_FILE) up --build -d
 
 infra/down:
 	@docker compose -f $(DOCKER_COMPOSE_FILE) down -v
-
-infra/up:
-	@docker compose -f $(DOCKER_COMPOSE_FILE) up -d --build
 
 db/open:
 	@docker exec -it $(DB_CONTAINER) psql -U $(DB_USER) -d $(DB_NAME)
@@ -62,3 +62,9 @@ migrate/force:
 		exit 1; \
 	fi
 	migrate -database $(DB_URL) -path $(MIGRATIONS_PATH) force $(v)
+
+logs/ai:
+	docker logs raitometer_ai
+
+logs/db:
+	docker logs raitometer_db
