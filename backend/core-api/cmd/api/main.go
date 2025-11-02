@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		log.Fatal("DATABASE_URL environment variable is not set")

@@ -7,6 +7,8 @@ import (
 	"github.com/Poted/raitometer/backend/core-api/internal/database"
 	"github.com/Poted/raitometer/backend/core-api/internal/handlers"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
+
 	"github.com/jmoiron/sqlx"
 )
 
@@ -27,9 +29,20 @@ func New(db *sqlx.DB) *Server {
 
 	h := handlers.New(db, projectStore, userStore, calculatorStore)
 
+	s.configureMiddleware()
 	s.registerRoutes(h)
 
 	return s
+}
+
+func (s *Server) configureMiddleware() {
+	s.router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 }
 
 func (s *Server) registerRoutes(h *handlers.Handlers) {
@@ -72,8 +85,8 @@ func (s *Server) projectRoutes(h *handlers.Handlers) http.Handler {
 func (s *Server) calculatorRoutes(h *handlers.Handlers) http.Handler {
 	r := chi.NewRouter()
 
-	r.Post("/{calculatorID}/modules", h.CreateModuleHandler)
 	r.Get("/{calculatorID}", h.GetFullCalculatorHandler)
+	r.Post("/{calculatorID}/modules", h.CreateModuleHandler)
 
 	return r
 }
